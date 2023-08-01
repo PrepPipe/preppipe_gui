@@ -2,16 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "ExecutionData.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
-
-struct UnspecifiedPathInfo {
-    bool isDir = false;
-    QString filter;
-    QString defaultName;
-};
 
 struct ExecuteInfo
 {
@@ -35,9 +30,11 @@ public:
 private slots:
     void search_exe();
     void settingsChanged();
+    void inputListChanged();
+    void requestLaunch();
 
 private:
     Ui::MainWindow *ui;
-    ExecuteInfo curInfo;
+    ExecutionInfo curInfo;
 };
 #endif // MAINWINDOW_H

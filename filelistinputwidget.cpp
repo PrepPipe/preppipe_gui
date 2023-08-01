@@ -13,6 +13,7 @@ FileListInputWidget::FileListInputWidget(QWidget *parent) :
     ui->setupUi(this);
     setAcceptDrops(true);
     setDirectoryMode(isDirectoryMode);
+    connect(ui->listWidget, &QListWidget::itemChanged, this, &FileListInputWidget::listChanged);
     connect(ui->addButton,      &QPushButton::clicked, this, &FileListInputWidget::itemAdd);
     connect(ui->removeButton,   &QPushButton::clicked, this, &FileListInputWidget::itemRemove);
     connect(ui->moveUpButton,   &QPushButton::clicked, this, &FileListInputWidget::itemMoveUp);
@@ -112,6 +113,7 @@ void FileListInputWidget::itemRemove()
     if (currow >= 0) {
         auto* item = ui->listWidget->item(currow);
         delete item;
+        emit listChanged();
     }
 }
 QStringList FileListInputWidget::getCurrentList() const

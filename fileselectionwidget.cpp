@@ -9,14 +9,14 @@ namespace {
 
 bool defaultFileChecker(const QString& path){
     const QFileInfo info(path);
-    if (info.exists() and info.isFile()) {
+    if (info.exists() && info.isFile()) {
         return true;
     }
     return false;
 }
 bool defaultDirectoryChecker(const QString& path) {
     const QFileInfo info(path);
-    if (info.exists() and info.isDir()) {
+    if (info.exists() && info.isDir()) {
         return true;
     }
     return false;

@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "executewindow.h"
 
 #include <QDir>
 #include <QProcessEnvironment>
@@ -32,6 +33,16 @@ MainWindow::MainWindow(QWidget *parent)
     ui->assetUsageSelectionWidget->setFilter(tr(u8"分析报告 (*.txt)"));
     ui->assetUsageSelectionWidget->setDefaultName(tr(u8"资源使用分析报告.txt"));
     ui->inputWidget->setFieldName(tr(u8"输入文档"));
+    ui->inputWidget->setFilter(tr(u8"ODF文档 (*.odt)"));
+    ui->inputWidget->setVerifyCallBack([=](const QString& path) -> bool {
+        const QFileInfo info(path);
+        if (!info.exists() || !info.isFile() || !info.isReadable())
+            return false;
+        if (info.suffix().compare("odt", Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+        return false;
+    });
     ui->searchPathInputWidget->setFieldName(tr(u8"素材搜索目录"));
     ui->renpyOutputDirWidget->setFieldName(tr(u8"RenPy 输出目录"));
     ui->renpyOutputDirWidget->setDefaultName("game");
@@ -74,6 +85,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->customPassGroupBox, &QGroupBox::toggled, this, &MainWindow::settingsChanged);
     connect(ui->irPassLineEdit, &QLineEdit::textChanged, this, &MainWindow::settingsChanged);
 
+    connect(ui->inputWidget, &FileListInputWidget::listChanged, this, &MainWindow::inputListChanged);
+    connect(ui->executePushButton, &QPushButton::clicked, this, &MainWindow::requestLaunch);
+
     // 尝试从环境变量里读取插件目录
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     if (env.contains("PREPPIPE_PLUGINS")) {
@@ -82,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
             ui->pluginSelectionWidget->setCurrentPath(path);
         }
     }
+    ui->statusbar->showMessage(tr(u8"请指定主程序路径"));
 
     // 初始化时尝试寻找主程序
     QMetaObject::invokeMethod(this, &MainWindow::search_exe, Qt::QueuedConnection);
@@ -106,6 +121,18 @@ void MainWindow::search_exe()
             ui->mainExecutableSelectionWidget->setCurrentPath(candidate);
             return;
         }
+    }
+}
+
+void MainWindow::inputListChanged()
+{
+    if (!ui->autoSearchPathCheckBox->isChecked())
+        return;
+    QStringList paths = ui->inputWidget->getCurrentList();
+    for (const QString& p : paths) {
+        QFileInfo info(p);
+        auto dir = info.dir();
+        ui->searchPathInputWidget->addPath(dir.canonicalPath());
     }
 }
 
@@ -147,20 +174,30 @@ QList<QString> splitCommandLineArguments(const QString& inputString) {
 
 void MainWindow::settingsChanged()
 {
-    ExecuteInfo newInfo;
+    ExecutionInfo newInfo;
 
     QStringList args;
     QHash<QString, QString> envs;
     QHash<int, UnspecifiedPathInfo> unspecifiedPaths;
+    QList<OutputInfo> specifiedOutputs;
     QStringList errors;
     QString unspecified = tr(u8"<未指定：%1>");
+    bool isExecutableSpecified = false;
 
     // 从环境变量开始
+    // 使我们可以读取 UTF-8 输出的内容
+    envs.insert("PYTHONIOENCODING", "utf_8");
     QString pluginpath = ui->pluginSelectionWidget->getCurrentPath();
     if (pluginpath.length() > 0) {
         envs.insert("PREPPIPE_PLUGINS", pluginpath);
     }
-    auto populatePath = [&](FileSelectionWidget* w) -> void {
+    auto populatePath = [&](FileSelectionWidget* w, bool isOutput) -> void {
+        if (isOutput) {
+            OutputInfo outInfo;
+            outInfo.argindex = args.size();
+            outInfo.fieldName = w->getFieldName();
+            specifiedOutputs.append(outInfo);
+        }
         QString path = w->getCurrentPath();
         if (path.length() == 0) {
             int index = args.size();
@@ -176,7 +213,12 @@ void MainWindow::settingsChanged()
     };
 
     // 主程序
-    populatePath(ui->mainExecutableSelectionWidget);
+    QString prog = ui->mainExecutableSelectionWidget->getCurrentPath();
+    if (prog.length() == 0) {
+        prog = unspecified.arg(ui->mainExecutableSelectionWidget->getFieldName());
+    } else {
+        isExecutableSpecified = true;
+    }
 
     // 设置部分
     if (ui->verboseCheckBox->isChecked()) {
@@ -238,24 +280,41 @@ void MainWindow::settingsChanged()
     // 控制流图
     if (ui->icfgGroupBox->isChecked()) {
         args.append("--dump-icfg");
-        populatePath(ui->icfgExportSelectionWidget);
+        populatePath(ui->icfgExportSelectionWidget, true);
     }
 
     // 资源分析
     if (ui->assetUsageGroupBox->isChecked()) {
         args.append("--vn-assetusage");
-        populatePath(ui->assetUsageSelectionWidget);
+        populatePath(ui->assetUsageSelectionWidget, true);
     }
 
     // 发言信息导出
     if (ui->sayDumpGroupBox->isChecked()) {
         args.append("--vn-saydump");
-        populatePath(ui->sayDumpLocationSelectionWidget);
+        populatePath(ui->sayDumpLocationSelectionWidget, true);
         QString preset = ui->sayDumpPresetComboBox->currentData().toString();
         if (preset.length() > 0) {
             args.append("--vnsaydump-preset");
             args.append(preset);
         }
+    }
+
+    // 输出部分
+    if (ui->outputSelectionTabWidget->currentWidget() == ui->noOutputTab) {
+        // 什么都不做
+    } else if (ui->outputSelectionTabWidget->currentWidget() == ui->renpyOutputTab) {
+        args.append("--renpy-codegen");
+        args.append("--renpy-export");
+        populatePath(ui->renpyOutputDirWidget, true);
+        if (ui->renpyUseTemplateCheckBox->isChecked()) {
+            args.append("--renpy-export-templatedir");
+            populatePath(ui->renpyTemplateSelectionWidget, true);
+        }
+    }
+
+    if (!isExecutableSpecified) {
+        errors.append(tr(u8"请提供主程序路径"));
     }
 
     // 如果某些路径选项没法通过新建临时文件、临时目录来解决的话，同样视作错误
@@ -265,11 +324,12 @@ void MainWindow::settingsChanged()
         }
     }
 
+    curInfo.program = prog;
     curInfo.args = args;
     curInfo.envs = envs;
     curInfo.unspecfiedPaths = unspecifiedPaths;
-    curInfo.errors = errors;
-    ui->executePushButton->setEnabled(errors.size() > 0);
+    curInfo.specifiedOutputs = specifiedOutputs;
+    ui->executePushButton->setEnabled(errors.size() == 0);
 
     if (errors.size() > 0) {
         ui->statusbar->showMessage(errors.first());
@@ -279,20 +339,25 @@ void MainWindow::settingsChanged()
         ui->statusbar->clearMessage();
     }
 
-    QString mergedstr;
-    for (const QString& a : args) {
-        if (mergedstr.length() > 0) {
-            mergedstr += ' ';
-        }
-        if (a.contains(' ')) {
-            QString copy(a);
-            copy.replace('"', "\\\"");
-            mergedstr += '"';
-            mergedstr += copy;
-            mergedstr += '"';
-        } else {
-            mergedstr += a;
-        }
-    }
-    ui->commandTextEdit->setPlainText(mergedstr);
+    ui->commandTextEdit->setPlainText(getMergedCommand(prog, args));
 }
+
+void MainWindow::requestLaunch()
+{
+    if (ui->executePushButton->isEnabled()) {
+        qDebug() << "Execute: "
+                 << "Program=" << curInfo.program
+                 << ", args=" << curInfo.args
+                 << ", envs=" << curInfo.envs;
+        for (auto iter = curInfo.specifiedOutputs.begin(), iterEnd = curInfo.specifiedOutputs.end();  iter != iterEnd; ++iter) {
+            qDebug() << "output: " << iter->argindex << ": " << iter->fieldName;
+        }
+        for (auto iter = curInfo.unspecfiedPaths.begin(), iterEnd = curInfo.unspecfiedPaths.end();  iter != iterEnd; ++iter) {
+            qDebug() << "unspecified: " << iter.key() << ": " << iter.value().defaultName;
+        }
+        ExecuteWindow* w = new ExecuteWindow();
+        w->init(this->curInfo);
+        w->show();
+    }
+}
+

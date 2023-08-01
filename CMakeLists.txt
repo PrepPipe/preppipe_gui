@@ -19,12 +19,19 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        executewindow.h
+        executewindow.cpp
+        executewindow.ui
         fileselectionwidget.h
         fileselectionwidget.cpp
         fileselectionwidget.ui
         filelistinputwidget.h
         filelistinputwidget.cpp
         filelistinputwidget.ui
+        outputwidget.h
+        outputwidget.cpp
+        outputwidget.ui
+        ExecutionData.h
         ${TS_FILES}
 )
 
