@@ -185,8 +185,6 @@ void MainWindow::settingsChanged()
     bool isExecutableSpecified = false;
 
     // 从环境变量开始
-    // 使我们可以读取 UTF-8 输出的内容
-    envs.insert("PYTHONIOENCODING", "utf_8");
     QString pluginpath = ui->pluginSelectionWidget->getCurrentPath();
     if (pluginpath.length() > 0) {
         envs.insert("PREPPIPE_PLUGINS", pluginpath);

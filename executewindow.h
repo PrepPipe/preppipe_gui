@@ -21,6 +21,12 @@ public:
 
     void init(const ExecutionInfo& info);
 
+protected:
+    virtual void closeEvent(QCloseEvent* e) override;
+
+private slots:
+    void handleProcOutput();
+
 signals:
     void executionFinished();
 
@@ -32,6 +38,8 @@ private:
     QVBoxLayout* outputLayout;
     QTemporaryDir tmpdir;
     QProcess proc;
+    bool isCanClose = true;
+    bool isUTF8Fallback = false;
 };
 
 #endif // EXECUTEWINDOW_H

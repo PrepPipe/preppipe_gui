@@ -6,6 +6,7 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QProcess>
+#include <QDirIterator>
 
 OutputWidget::OutputWidget(QWidget *parent) :
     QWidget(parent),
@@ -21,6 +22,19 @@ OutputWidget::~OutputWidget()
     delete ui;
 }
 
+QDateTime OutputWidget::getLatestModificationInDir(const QString& dirpath)
+{
+    QDateTime result;
+    QDirIterator iter(dirpath, QDir::Files | QDir::Dirs, QDirIterator::Subdirectories);
+    while (iter.hasNext()) {
+        QFileInfo info(iter.next());
+        if (!result.isValid() || result < info.lastModified()) {
+            result = info.lastModified();
+        }
+    }
+    return result;
+}
+
 void OutputWidget::setData(const QString &fieldName, const QString &path)
 {
     this->fieldName = fieldName;
@@ -30,7 +44,13 @@ void OutputWidget::setData(const QString &fieldName, const QString &path)
     ui->statusLabel->setText(tr(u8"初始"));
     QFileInfo f(path);
     if (f.exists()) {
-        lastModified = f.lastModified();
+        // 如果是目录的话，我们使用当前时间
+        // 其实应该遍历目录下所有文件、取最新的时间的，这里就先不这样做了
+        if (f.isDir()) {
+            lastModified = QDateTime::currentDateTime();
+        } else {
+            lastModified = f.lastModified();
+        }
     } else {
         lastModified = QDateTime();
     }
@@ -41,6 +61,9 @@ void OutputWidget::updateStatus()
     QFileInfo info(path);
     if (info.exists()) {
         QDateTime curtime = info.lastModified();
+        if (info.isDir()) {
+            curtime = getLatestModificationInDir(path);
+        }
         if (!lastModified.isValid() || lastModified < curtime) {
             ui->statusLabel->setText(tr(u8"已生成"));
             return;

@@ -19,6 +19,8 @@ public:
 
     void setData(const QString& fieldName, const QString& path);
 
+    static QDateTime getLatestModificationInDir(const QString& dirpath);
+
 public slots:
     void updateStatus();
     void requestOpenContainingDirectory();

@@ -1,6 +1,7 @@
 #include "executewindow.h"
 #include "ui_executewindow.h"
 #include "outputwidget.h"
+#include <QOperatingSystemVersion>
 
 int ExecuteWindow::windowindex = 0;
 
@@ -16,6 +17,21 @@ ExecuteWindow::ExecuteWindow(QWidget *parent) :
     windowindex += 1;
     QString title = tr(u8"#%1 执行窗口").arg(QString::number(windowindex));
     setWindowTitle(title);
+    tmpdir.setAutoRemove(true);
+    setAttribute(Qt::WA_DeleteOnClose);
+
+    QOperatingSystemVersion osver = QOperatingSystemVersion::current();
+    auto version = osver.version();
+    QString osinfo = osver.name() + " " + version.toString();
+    // Windows 11 会有版本号 >= 10.0.22000...
+    if (osver.type() == QOperatingSystemVersion::Windows && version.majorVersion() == 10 && version.minorVersion() == 0 && version.microVersion() >= 22000) {
+        osinfo += " (Windows 11)";
+    }
+    // 如果当前系统默认的编码无法显示中文或是其他非 ASCII 字符，就使用 UTF-8 而不是默认编码
+    if (osver.type() == QOperatingSystemVersion::Windows && version.majorVersion() == 10 && version.minorVersion() == 0 && version.microVersion() < 22000) {
+        isUTF8Fallback = true;
+    }
+    ui->plainTextEdit->appendPlainText(osinfo);
 }
 
 ExecuteWindow::~ExecuteWindow()
@@ -23,8 +39,18 @@ ExecuteWindow::~ExecuteWindow()
     delete ui;
 }
 
+void ExecuteWindow::closeEvent(QCloseEvent* e)
+{
+    if (!isCanClose) {
+        e->ignore();
+        return;
+    }
+    QMainWindow::closeEvent(e);
+}
+
 void ExecuteWindow::init(const ExecutionInfo& info)
 {
+    isCanClose = false;
     static const QString SEPARATOR = QString("=").repeated(20);
     QStringList args = info.args;
     if (info.unspecfiedPaths.size() > 0) {
@@ -48,37 +74,50 @@ void ExecuteWindow::init(const ExecutionInfo& info)
         w->setData(out.fieldName, value);
         connect(this, &ExecuteWindow::executionFinished, w, &OutputWidget::updateStatus);
     }
-    // getMergedCommand
     proc.setProgram(info.program);
     proc.setArguments(args);
-    if (info.envs.size() > 0) {
+    if (info.envs.size() > 0 || isUTF8Fallback) {
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         for (auto iter = info.envs.begin(), iterEnd = info.envs.end(); iter != iterEnd; ++iter) {
             env.insert(iter.key(), iter.value());
+        }
+        if (isUTF8Fallback) {
+            // 如果系统定的默认输出编码不能显示中文或是其他非ASCII字符，让程序输出 UTF-8 而不是报错
+            env.insert("PYTHONIOENCODING", "utf-8");
+            env.insert("PYTHONLEGACYWINDOWSSTDIO", "utf-8");
+            env.insert("PYTHONUTF8", "1");
         }
         proc.setProcessEnvironment(env);
     }
     proc.setProcessChannelMode(QProcess::MergedChannels);
 
-    connect(&proc, &QProcess::readyReadStandardOutput, this, [this](){
-        auto content = proc.readAllStandardOutput();
-        //qDebug() << "output: " << content;
-        ui->plainTextEdit->appendPlainText(QString::fromLocal8Bit(content));
-    });
-
+    connect(&proc, &QProcess::finished, this, &ExecuteWindow::executionFinished);
+    connect(&proc, &QProcess::readyReadStandardOutput, this, &ExecuteWindow::handleProcOutput);
     connect(&proc, &QProcess::finished, this, [this](){
-        auto content = proc.readAllStandardOutput();
-        //qDebug() << "output: " << content;
-        if (content.length() > 0) {
-            ui->plainTextEdit->appendPlainText(QString::fromLocal8Bit(content));
-        }
+        ExecuteWindow::handleProcOutput();
         ui->plainTextEdit->appendPlainText(SEPARATOR);
         ui->plainTextEdit->appendPlainText(tr(u8"执行结束(%1)").arg(QString::number(proc.exitCode())));
         ui->killButton->setEnabled(false);
+        isCanClose = true;
     });
-    connect(&proc, &QProcess::finished, this, &ExecuteWindow::executionFinished);
+
     QString mergedArgs = getMergedCommand(info.program, args);
     ui->plainTextEdit->appendPlainText(mergedArgs + "\n" + SEPARATOR + '\n');
     connect(ui->killButton, &QPushButton::clicked, &proc, &QProcess::kill);
     proc.start(QProcess::ReadOnly);
+}
+
+void ExecuteWindow::handleProcOutput()
+{
+    auto content = proc.readAllStandardOutput();
+    if (content.length() == 0)
+        return;
+
+    QString decoded;
+    if (!isUTF8Fallback) {
+        decoded = QString::fromLocal8Bit(content);
+    } else {
+        decoded = QString::fromUtf8(content);
+    }
+    ui->plainTextEdit->appendPlainText(decoded);
 }

@@ -14,6 +14,11 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
 set(TS_FILES preppipe_gui_zh_HK.ts)
 
+set(WINDOWS_SOURCES)
+if (WIN32)
+    set(WINDOWS_SOURCES windows.rc)
+endif (WIN32)
+
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
@@ -32,6 +37,8 @@ set(PROJECT_SOURCES
         outputwidget.cpp
         outputwidget.ui
         ExecutionData.h
+        resource.qrc
+        ${WINDOWS_SOURCES}
         ${TS_FILES}
 )
 
