@@ -1,0 +1,23 @@
+name: "ci"
+
+on:
+  push:
+    branches:
+      - "main"
+jobs:
+  pre-release:
+    name: "Pre Release"
+    runs-on: "windows-2019" # Windows 10, VS 2019
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/build
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "开发中的最新版本 (Latest development build)"
+          files: |
+            preppipe_gui-windows-x64.7z

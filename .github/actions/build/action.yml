@@ -1,0 +1,39 @@
+name: "Build"
+description: "Build the executable"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Visual Studio shell
+      uses: egor-tensin/vs-shell@v2
+      with:
+        arch: x64
+    - name: "Install Qt"
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: "6.5.2"
+        arch: win64_msvc2019_64
+        dir: ${{ runner.temp }}
+    - name: Create build directory
+      shell: cmd
+      run:  mkdir ${{ runner.temp }}\build
+    - name: "Run Cmake"
+      shell: cmd
+      run: |
+        cmake.exe  -S . -B ${{ runner.temp }}\build
+    - name: Build
+      shell: cmd
+      run: |
+        cmake.exe --build ${{ runner.temp }}\build --config Release
+    - name: Setup dist directory
+      shell: cmd
+      run: |
+        mkdir ${{ runner.temp }}\dist
+        copy ${{ runner.temp }}\build\Release\preppipe_gui.exe ${{ runner.temp }}\dist
+    - name: Run windeployqt
+      shell: cmd
+      run: windeployqt.exe --no-translations --compiler-runtime ${{ runner.temp }}\dist
+    - name: Create archive
+      shell: cmd
+      run: 7z.exe a -t7z -mx=9 preppipe_gui-windows-x64.7z ${{ runner.temp }}\dist\*
+
