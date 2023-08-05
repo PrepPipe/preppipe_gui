@@ -307,7 +307,7 @@ void MainWindow::settingsChanged()
         populatePath(ui->renpyOutputDirWidget, true);
         if (ui->renpyUseTemplateCheckBox->isChecked()) {
             args.append("--renpy-export-templatedir");
-            populatePath(ui->renpyTemplateSelectionWidget, true);
+            populatePath(ui->renpyTemplateSelectionWidget, false);
         }
     }
 
