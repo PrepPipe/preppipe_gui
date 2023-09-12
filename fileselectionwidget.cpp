@@ -76,6 +76,11 @@ void FileSelectionWidget::requestOpenDialog()
     } else {
         dialog->setFileMode(isExistingOnly? QFileDialog::ExistingFile : QFileDialog::AnyFile);
     }
+    if (isOutputInsteadofInput) {
+        dialog->setAcceptMode(QFileDialog::AcceptSave);
+    } else {
+        dialog->setAcceptMode(QFileDialog::AcceptOpen);
+    }
     connect(dialog, &QFileDialog::fileSelected, this, &FileSelectionWidget::setCurrentPath);
     connect(dialog, &QFileDialog::finished, dialog, &QFileDialog::deleteLater);
     dialog->show();

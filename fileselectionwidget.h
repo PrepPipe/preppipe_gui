@@ -24,6 +24,10 @@ public:
     void setVerifyCallBack(std::function<bool(const QString&)> cb) {
         verifyCB = cb;
     }
+    void setIsOutputInsteadofInput(bool v) {
+        isOutputInsteadofInput = v;
+    }
+    bool getIsOutputInsteadofInput() const {return isOutputInsteadofInput;}
     void setExistingOnly(bool v) {
         isExistingOnly = v;
     }
@@ -60,6 +64,7 @@ protected:
 private:
     Ui::FileSelectionWidget *ui;
     bool isDirectoryMode = false;
+    bool isOutputInsteadofInput = false;
     bool isExistingOnly = false;
     std::function<bool(const QString&)> verifyCB;
     QString currentPath;

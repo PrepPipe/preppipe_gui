@@ -12,12 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->renpyOutputDirWidget->setDirectoryMode(true);
-    ui->renpyTemplateSelectionWidget->setDirectoryMode(true);
-    ui->pluginSelectionWidget->setDirectoryMode(true);
-    ui->searchPathInputWidget->setDirectoryMode(true);
-    ui->sayDumpLocationSelectionWidget->setDirectoryMode(true);
-
+    ui->icfgExportSelectionWidget->setIsOutputInsteadofInput(true);
     ui->icfgExportSelectionWidget->setFieldName(tr(u8"控制流图输出文件(.dot)"));
     ui->icfgExportSelectionWidget->setFilter(tr(u8"Graphviz DOT 图片 (*.dot)"));
     ui->icfgExportSelectionWidget->setDefaultName("icfg.dot");
@@ -31,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
         return false;
     });
+    ui->assetUsageSelectionWidget->setIsOutputInsteadofInput(true);
     ui->assetUsageSelectionWidget->setFieldName(tr(u8"资源使用分析输出路径"));
     ui->assetUsageSelectionWidget->setFilter(tr(u8"分析报告 (*.txt)"));
     ui->assetUsageSelectionWidget->setDefaultName(tr(u8"资源使用分析报告.txt"));
@@ -45,14 +41,27 @@ MainWindow::MainWindow(QWidget *parent)
         }
         return false;
     });
+    ui->searchPathInputWidget->setDirectoryMode(true);
     ui->searchPathInputWidget->setFieldName(tr(u8"素材搜索目录"));
+
+    ui->renpyOutputDirWidget->setDirectoryMode(true);
+    ui->renpyOutputDirWidget->setIsOutputInsteadofInput(true);
     ui->renpyOutputDirWidget->setFieldName(tr(u8"RenPy 输出目录"));
     ui->renpyOutputDirWidget->setDefaultName("game");
+
+    ui->renpyTemplateSelectionWidget->setDirectoryMode(true);
+    ui->renpyTemplateSelectionWidget->setIsOutputInsteadofInput(false);
     ui->renpyTemplateSelectionWidget->setFieldName(tr(u8"RenPy 工程模板目录"));
+
+    ui->pluginSelectionWidget->setDirectoryMode(true);
     ui->pluginSelectionWidget->setFieldName(tr(u8"插件目录"));
+
+    ui->sayDumpLocationSelectionWidget->setDirectoryMode(true);
+    ui->sayDumpLocationSelectionWidget->setIsOutputInsteadofInput(true);
     ui->sayDumpLocationSelectionWidget->setFieldName(tr(u8"发言信息导出目录"));
     ui->sayDumpLocationSelectionWidget->setDefaultName(tr("发言信息"));
 
+    ui->customTranslationImportLocationSelectionWidget->setIsOutputInsteadofInput(false);
     ui->customTranslationImportLocationSelectionWidget->setFieldName(tr(u8"自定义翻译、别名文件"));
     ui->customTranslationImportLocationSelectionWidget->setFilter(tr(u8"JSON 文件 (*.json)"));
     ui->customTranslationImportLocationSelectionWidget->setVerifyCallBack([=](const QString& path) -> bool {
@@ -207,8 +216,8 @@ void MainWindow::settingsChanged()
     if (pluginpath.length() > 0) {
         envs.insert("PREPPIPE_PLUGINS", pluginpath);
     }
-    auto populatePath = [&](FileSelectionWidget* w, bool isOutput) -> void {
-        if (isOutput) {
+    auto populatePath = [&](FileSelectionWidget* w) -> void {
+        if (w->getIsOutputInsteadofInput()) {
             OutputInfo outInfo;
             outInfo.argindex = args.size();
             outInfo.fieldName = w->getFieldName();
@@ -258,7 +267,7 @@ void MainWindow::settingsChanged()
     // 翻译导入
     if (ui->translationImportGroupBox->isChecked()) {
         args.append("--translation-import");
-        populatePath(ui->customTranslationImportLocationSelectionWidget, false);
+        populatePath(ui->customTranslationImportLocationSelectionWidget);
     }
 
     // 输入
@@ -302,19 +311,19 @@ void MainWindow::settingsChanged()
     // 控制流图
     if (ui->icfgGroupBox->isChecked()) {
         args.append("--dump-icfg");
-        populatePath(ui->icfgExportSelectionWidget, true);
+        populatePath(ui->icfgExportSelectionWidget);
     }
 
     // 资源分析
     if (ui->assetUsageGroupBox->isChecked()) {
         args.append("--vn-assetusage");
-        populatePath(ui->assetUsageSelectionWidget, true);
+        populatePath(ui->assetUsageSelectionWidget);
     }
 
     // 发言信息导出
     if (ui->sayDumpGroupBox->isChecked()) {
         args.append("--vn-saydump");
-        populatePath(ui->sayDumpLocationSelectionWidget, true);
+        populatePath(ui->sayDumpLocationSelectionWidget);
         QString preset = ui->sayDumpPresetComboBox->currentData().toString();
         if (preset.length() > 0) {
             args.append("--vnsaydump-preset");
@@ -328,10 +337,10 @@ void MainWindow::settingsChanged()
     } else if (ui->outputSelectionTabWidget->currentWidget() == ui->renpyOutputTab) {
         args.append("--renpy-codegen");
         args.append("--renpy-export");
-        populatePath(ui->renpyOutputDirWidget, true);
+        populatePath(ui->renpyOutputDirWidget);
         if (ui->renpyUseTemplateCheckBox->isChecked()) {
             args.append("--renpy-export-templatedir");
-            populatePath(ui->renpyTemplateSelectionWidget, false);
+            populatePath(ui->renpyTemplateSelectionWidget);
         }
     }
 
@@ -393,6 +402,7 @@ void MainWindow::requestTranslationExport()
     }
     // 其次，弹出对话框让用户选择保存位置
     QFileDialog* dialog = new QFileDialog(this, tr(u8"请选择导出位置"), QString(), QString("JSON 文件 (*.json)"));
+    dialog->setAcceptMode(QFileDialog::AcceptSave);
     dialog->setFileMode(QFileDialog::AnyFile);
     connect(dialog, &QFileDialog::fileSelected, this, &MainWindow::requestTranslationExportImpl);
     connect(dialog, &QFileDialog::finished, dialog, &QFileDialog::deleteLater);
