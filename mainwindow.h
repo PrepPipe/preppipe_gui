@@ -32,6 +32,8 @@ private slots:
     void settingsChanged();
     void inputListChanged();
     void requestLaunch();
+    void requestTranslationExport();
+    void requestTranslationExportImpl(const QString& path);
 
 private:
     Ui::MainWindow *ui;

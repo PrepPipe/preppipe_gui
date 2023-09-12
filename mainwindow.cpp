@@ -4,6 +4,8 @@
 
 #include <QDir>
 #include <QProcessEnvironment>
+#include <QMessageBox>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -51,6 +53,18 @@ MainWindow::MainWindow(QWidget *parent)
     ui->sayDumpLocationSelectionWidget->setFieldName(tr(u8"发言信息导出目录"));
     ui->sayDumpLocationSelectionWidget->setDefaultName(tr("发言信息"));
 
+    ui->customTranslationImportLocationSelectionWidget->setFieldName(tr(u8"自定义翻译、别名文件"));
+    ui->customTranslationImportLocationSelectionWidget->setFilter(tr(u8"JSON 文件 (*.json)"));
+    ui->customTranslationImportLocationSelectionWidget->setVerifyCallBack([=](const QString& path) -> bool {
+        const QFileInfo info(path);
+        if (!info.exists() || !info.isFile() || !info.isReadable())
+            return false;
+        if (info.suffix().compare("json", Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+        return false;
+    });
+
     ui->languageComboBox->addItem(u8"简体中文 (zh_cn)", QString("zh_cn"));
     ui->languageComboBox->addItem(u8"繁體中文 (zh_hk)", QString("zh_hk"));
     ui->languageComboBox->addItem(u8"English (en)", QString("en"));
@@ -84,6 +98,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->sayDumpPresetComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::settingsChanged);
     connect(ui->customPassGroupBox, &QGroupBox::toggled, this, &MainWindow::settingsChanged);
     connect(ui->irPassLineEdit, &QLineEdit::textChanged, this, &MainWindow::settingsChanged);
+    connect(ui->translationImportGroupBox, &QGroupBox::toggled, this, &MainWindow::settingsChanged);
+    connect(ui->customTranslationImportLocationSelectionWidget, &FileSelectionWidget::filePathUpdated, this, &MainWindow::settingsChanged);
 
     connect(ui->inputWidget, &FileListInputWidget::listChanged, this, &MainWindow::inputListChanged);
     connect(ui->executePushButton, &QPushButton::clicked, this, &MainWindow::requestLaunch);
@@ -97,6 +113,8 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
     ui->statusbar->showMessage(tr(u8"请指定主程序路径"));
+
+    connect(ui->actionTranslationExport, &QAction::triggered, this, &MainWindow::requestTranslationExport);
 
     // 初始化时尝试寻找主程序
     QMetaObject::invokeMethod(this, &MainWindow::search_exe, Qt::QueuedConnection);
@@ -237,6 +255,12 @@ void MainWindow::settingsChanged()
         args.append(searchpaths);
     }
 
+    // 翻译导入
+    if (ui->translationImportGroupBox->isChecked()) {
+        args.append("--translation-import");
+        populatePath(ui->customTranslationImportLocationSelectionWidget, false);
+    }
+
     // 输入
     args.append("--odf");
     auto inputs = ui->inputWidget->getCurrentList();
@@ -357,5 +381,50 @@ void MainWindow::requestLaunch()
         w->init(this->curInfo);
         w->show();
     }
+}
+
+void MainWindow::requestTranslationExport()
+{
+    // 首先，执行该操作需要已经选好主程序
+    QString prog = ui->mainExecutableSelectionWidget->getCurrentPath();
+    if (prog.length() == 0) {
+        QMessageBox::critical(this, tr(u8"主程序未选择"), tr(u8"导出翻译、别名文件需要先选择主程序，请在选好主程序后再尝试该操作。"));
+        return;
+    }
+    // 其次，弹出对话框让用户选择保存位置
+    QFileDialog* dialog = new QFileDialog(this, tr(u8"请选择导出位置"), QString(), QString("JSON 文件 (*.json)"));
+    dialog->setFileMode(QFileDialog::AnyFile);
+    connect(dialog, &QFileDialog::fileSelected, this, &MainWindow::requestTranslationExportImpl);
+    connect(dialog, &QFileDialog::finished, dialog, &QFileDialog::deleteLater);
+    dialog->show();
+}
+
+void MainWindow::requestTranslationExportImpl(const QString& path)
+{
+    // 再次检查，避免 TOC2TOU 问题
+    QString prog = ui->mainExecutableSelectionWidget->getCurrentPath();
+    if (prog.length() == 0) {
+        QMessageBox::critical(this, tr(u8"主程序未选择"), tr(u8"导出翻译、别名文件需要先选择主程序，请在选好主程序后再尝试该操作。"));
+        return;
+    }
+
+    // 开始准备使用 ExecuteWindow 来实现操作
+    ExecutionInfo info;
+    info.program = prog;
+    QString pluginpath = ui->pluginSelectionWidget->getCurrentPath();
+    if (pluginpath.length() > 0) {
+        info.envs.insert("PREPPIPE_PLUGINS", pluginpath);
+    }
+    info.args.append("--translation-export");
+    {
+        OutputInfo outInfo;
+        outInfo.argindex = info.args.size();
+        outInfo.fieldName = tr(u8"导出的翻译、别名文件");
+        info.specifiedOutputs.append(outInfo);
+    }
+    info.args.append(path);
+    ExecuteWindow* w = new ExecuteWindow();
+    w->init(info);
+    w->show();
 }
 
