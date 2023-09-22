@@ -31,12 +31,15 @@ MainWindow::MainWindow(QWidget *parent)
     ui->assetUsageSelectionWidget->setFilter(tr(u8"分析报告 (*.txt)"));
     ui->assetUsageSelectionWidget->setDefaultName(tr(u8"资源使用分析报告.txt"));
     ui->inputWidget->setFieldName(tr(u8"输入文档"));
-    ui->inputWidget->setFilter(tr(u8"ODF文档 (*.odt)"));
+    ui->inputWidget->setFilter(tr(u8"ODF/OOXML 文档 (*.odt *.docx)"));
     ui->inputWidget->setVerifyCallBack([=](const QString& path) -> bool {
         const QFileInfo info(path);
         if (!info.exists() || !info.isFile() || !info.isReadable())
             return false;
         if (info.suffix().compare("odt", Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+        if (info.suffix().compare("docx", Qt::CaseInsensitive) == 0) {
             return true;
         }
         return false;
@@ -271,13 +274,31 @@ void MainWindow::settingsChanged()
     }
 
     // 输入
-    args.append("--odf");
     auto inputs = ui->inputWidget->getCurrentList();
     if (inputs.size() == 0) {
         errors.append(tr(u8"请指定输入文档"));
         args.append(unspecified.arg(ui->inputWidget->getFieldName()));
     } else {
-        args.append(inputs);
+        // 根据文件类型选择相应的选项
+        const QString flag_odt = "--odf";
+        const QString flag_docx = "--docx";
+        QString lastFlag;
+        for (const QString& path : inputs) {
+            const QFileInfo info(path);
+            if (info.suffix().compare("odt", Qt::CaseInsensitive) == 0) {
+                if (lastFlag != flag_odt) {
+                    lastFlag = flag_odt;
+                    args.append(flag_odt);
+                }
+                args.append(path);
+            } else if (info.suffix().compare("docx", Qt::CaseInsensitive) == 0) {
+                if (lastFlag != flag_docx) {
+                    lastFlag = flag_docx;
+                    args.append(flag_docx);
+                }
+                args.append(path);
+            }
+        }
     }
 
     // 标准流程
