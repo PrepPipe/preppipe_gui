@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->assetUsageSelectionWidget->setFilter(tr(u8"分析报告 (*.txt)"));
     ui->assetUsageSelectionWidget->setDefaultName(tr(u8"资源使用分析报告.txt"));
     ui->inputWidget->setFieldName(tr(u8"输入文档"));
-    ui->inputWidget->setFilter(tr(u8"ODF/OOXML 文档 (*.odt *.docx)"));
+    ui->inputWidget->setFilter(tr(u8"可读取的文档 (*.odt *.docx *.md *.txt)"));
     ui->inputWidget->setVerifyCallBack([=](const QString& path) -> bool {
         const QFileInfo info(path);
         if (!info.exists() || !info.isFile() || !info.isReadable())
@@ -40,6 +40,12 @@ MainWindow::MainWindow(QWidget *parent)
             return true;
         }
         if (info.suffix().compare("docx", Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+        if (info.suffix().compare("md", Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+        if (info.suffix().compare("txt", Qt::CaseInsensitive) == 0) {
             return true;
         }
         return false;
@@ -200,6 +206,43 @@ QList<QString> splitCommandLineArguments(const QString& inputString) {
     return arguments;
 }
 
+class InputFlagBuilder
+{
+public:
+    InputFlagBuilder(std::initializer_list<std::pair<const char*,const char*>> list)
+    {
+        for (const auto& p : list) {
+            fmts.push_back(std::make_pair(p.first, QString(p.second)));
+        }
+    }
+    void buildArg(QStringList& args, const QStringList& inputs) {
+        QString lastFlag;
+        for (const QString& path : inputs) {
+            const QFileInfo info(path);
+            for (const auto& p : fmts) {
+                const char* suffix = p.first;
+                const QString& flag = p.second;
+                if (info.suffix().compare(suffix, Qt::CaseInsensitive) == 0) {
+                    if (lastFlag != flag) {
+                        lastFlag = flag;
+                        args.append(flag);
+                    }
+                    args.append(path);
+                    break;
+                }
+            }
+        }
+    }
+private:
+    std::vector<std::pair<const char*, QString>> fmts;
+};
+InputFlagBuilder ifb({
+    {"odt",     "--odf"},
+    {"docx",    "--docx"},
+    {"md",      "--md"},
+    {"txt",     "--txt"},
+});
+
 } // end anonymous namespace
 
 void MainWindow::settingsChanged()
@@ -280,25 +323,7 @@ void MainWindow::settingsChanged()
         args.append(unspecified.arg(ui->inputWidget->getFieldName()));
     } else {
         // 根据文件类型选择相应的选项
-        const QString flag_odt = "--odf";
-        const QString flag_docx = "--docx";
-        QString lastFlag;
-        for (const QString& path : inputs) {
-            const QFileInfo info(path);
-            if (info.suffix().compare("odt", Qt::CaseInsensitive) == 0) {
-                if (lastFlag != flag_odt) {
-                    lastFlag = flag_odt;
-                    args.append(flag_odt);
-                }
-                args.append(path);
-            } else if (info.suffix().compare("docx", Qt::CaseInsensitive) == 0) {
-                if (lastFlag != flag_docx) {
-                    lastFlag = flag_docx;
-                    args.append(flag_docx);
-                }
-                args.append(path);
-            }
-        }
+        ifb.buildArg(args, inputs);
     }
 
     // 标准流程
