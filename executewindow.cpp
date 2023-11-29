@@ -53,7 +53,7 @@ void ExecuteWindow::init(const ExecutionInfo& info)
     isCanClose = false;
     static const QString SEPARATOR = QString("=").repeated(20);
     QStringList args = info.args;
-    if (info.unspecfiedPaths.size() > 0) {
+    if (info.unspecifiedPaths.size() > 0) {
         if (!tmpdir.isValid()) {
             // 无法创建临时目录，无法执行
             ui->plainTextEdit->setPlainText(tr(u8"有未指定的输出且无法创建临时目录，无法执行"));
@@ -61,7 +61,7 @@ void ExecuteWindow::init(const ExecutionInfo& info)
         }
     }
     QDir tmppath(tmpdir.path());
-    for (auto iter = info.unspecfiedPaths.begin(), iterEnd = info.unspecfiedPaths.end(); iter != iterEnd; ++iter) {
+    for (auto iter = info.unspecifiedPaths.begin(), iterEnd = info.unspecifiedPaths.end(); iter != iterEnd; ++iter) {
         int argindex = iter.key();
         const auto& info = iter.value();
         QString fullpath = tmppath.filePath(info.defaultName);

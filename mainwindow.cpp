@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "executewindow.h"
+#include "tooldialog/imagepacktooldialog.h"
 
 #include <QDir>
 #include <QProcessEnvironment>
@@ -133,6 +134,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusbar->showMessage(tr(u8"请指定主程序路径"));
 
     connect(ui->actionTranslationExport, &QAction::triggered, this, &MainWindow::requestTranslationExport);
+    connect(ui->actionImagePackTool, &QAction::triggered, this, &MainWindow::requestImagePackTool);
 
     // 初始化时尝试寻找主程序
     QMetaObject::invokeMethod(this, &MainWindow::search_exe, Qt::QueuedConnection);
@@ -245,23 +247,44 @@ InputFlagBuilder ifb({
 
 } // end anonymous namespace
 
+bool MainWindow::populateInitialExecutionInfo(ExecutionInfo& info)
+{
+    bool isAllGood = true;
+    // 主程序
+    QString prog = ui->mainExecutableSelectionWidget->getCurrentPath();
+    if (prog.isEmpty()) {
+        prog = tr(u8"<未指定：%1>").arg(ui->mainExecutableSelectionWidget->getFieldName());
+        isAllGood = false;
+    }
+    info.program = prog;
+
+    //环境变量
+    QString pluginpath = ui->pluginSelectionWidget->getCurrentPath();
+    if (pluginpath.length() > 0) {
+        info.envs.insert("PREPPIPE_PLUGINS", pluginpath);
+    }
+
+    // 设置部分
+    if (ui->languageCheckBox->isChecked()) {
+        info.args.append("--language");
+        auto data = ui->languageComboBox->currentData();
+        info.args.append(data.toString());
+    }
+
+    return isAllGood;
+}
+
 void MainWindow::settingsChanged()
 {
     ExecutionInfo newInfo;
-
-    QStringList args;
-    QHash<QString, QString> envs;
-    QHash<int, UnspecifiedPathInfo> unspecifiedPaths;
-    QList<OutputInfo> specifiedOutputs;
+    bool isExecutableSpecified = populateInitialExecutionInfo(newInfo);
+    QStringList& args = newInfo.args;
+    QHash<int, UnspecifiedPathInfo>& unspecifiedPaths = newInfo.unspecifiedPaths;
+    QList<OutputInfo>& specifiedOutputs = newInfo.specifiedOutputs;
     QStringList errors;
-    QString unspecified = tr(u8"<未指定：%1>");
-    bool isExecutableSpecified = false;
 
-    // 从环境变量开始
-    QString pluginpath = ui->pluginSelectionWidget->getCurrentPath();
-    if (pluginpath.length() > 0) {
-        envs.insert("PREPPIPE_PLUGINS", pluginpath);
-    }
+    QString unspecified = tr(u8"<未指定：%1>");
+
     auto populatePath = [&](FileSelectionWidget* w) -> void {
         if (w->getIsOutputInsteadofInput()) {
             OutputInfo outInfo;
@@ -283,22 +306,9 @@ void MainWindow::settingsChanged()
         }
     };
 
-    // 主程序
-    QString prog = ui->mainExecutableSelectionWidget->getCurrentPath();
-    if (prog.length() == 0) {
-        prog = unspecified.arg(ui->mainExecutableSelectionWidget->getFieldName());
-    } else {
-        isExecutableSpecified = true;
-    }
-
     // 设置部分
     if (ui->verboseCheckBox->isChecked()) {
         args.append("-v");
-    }
-    if (ui->languageCheckBox->isChecked()) {
-        args.append("--language");
-        auto data = ui->languageComboBox->currentData();
-        args.append(data.toString());
     }
 
     // 搜索路径
@@ -401,11 +411,7 @@ void MainWindow::settingsChanged()
         }
     }
 
-    curInfo.program = prog;
-    curInfo.args = args;
-    curInfo.envs = envs;
-    curInfo.unspecfiedPaths = unspecifiedPaths;
-    curInfo.specifiedOutputs = specifiedOutputs;
+    curInfo = newInfo;
     ui->executePushButton->setEnabled(errors.size() == 0);
 
     if (errors.size() > 0) {
@@ -416,7 +422,7 @@ void MainWindow::settingsChanged()
         ui->statusbar->clearMessage();
     }
 
-    ui->commandTextEdit->setPlainText(getMergedCommand(prog, args));
+    ui->commandTextEdit->setPlainText(getMergedCommand(curInfo.program, curInfo.args));
 }
 
 void MainWindow::requestLaunch()
@@ -429,7 +435,7 @@ void MainWindow::requestLaunch()
         for (auto iter = curInfo.specifiedOutputs.begin(), iterEnd = curInfo.specifiedOutputs.end();  iter != iterEnd; ++iter) {
             qDebug() << "output: " << iter->argindex << ": " << iter->fieldName;
         }
-        for (auto iter = curInfo.unspecfiedPaths.begin(), iterEnd = curInfo.unspecfiedPaths.end();  iter != iterEnd; ++iter) {
+        for (auto iter = curInfo.unspecifiedPaths.begin(), iterEnd = curInfo.unspecifiedPaths.end();  iter != iterEnd; ++iter) {
             qDebug() << "unspecified: " << iter.key() << ": " << iter.value().defaultName;
         }
         ExecuteWindow* w = new ExecuteWindow();
@@ -482,5 +488,20 @@ void MainWindow::requestTranslationExportImpl(const QString& path)
     ExecuteWindow* w = new ExecuteWindow();
     w->init(info);
     w->show();
+}
+
+void MainWindow::requestImagePackTool()
+{
+    // 首先，执行该操作需要已经选好主程序
+    ExecutionInfo initInfo;
+    bool programProvided = populateInitialExecutionInfo(initInfo);
+    if (!programProvided) {
+        QMessageBox::critical(this, tr(u8"主程序未选择"), tr(u8"使用工具前需要先选择主程序，请在选好主程序后再尝试该操作。"));
+        return;
+    }
+    // 然后显示对话框，不用等待完成
+    ImagePackToolDialog* dialog = new ImagePackToolDialog(this);
+    dialog->setInitialExecutionInfo(initInfo);
+    dialog->show();
 }
 

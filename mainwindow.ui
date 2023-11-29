@@ -525,12 +525,24 @@
     </property>
     <addaction name="actionTranslationExport"/>
    </widget>
+   <widget class="QMenu" name="toolMenu">
+    <property name="title">
+     <string>工具</string>
+    </property>
+    <addaction name="actionImagePackTool"/>
+   </widget>
    <addaction name="operationMenu"/>
+   <addaction name="toolMenu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTranslationExport">
    <property name="text">
     <string>导出翻译、别名文件</string>
+   </property>
+  </action>
+  <action name="actionImagePackTool">
+   <property name="text">
+    <string>图片包</string>
    </property>
   </action>
  </widget>

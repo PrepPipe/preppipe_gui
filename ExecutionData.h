@@ -22,7 +22,7 @@ struct ExecutionInfo {
     QString program;
     QStringList args;
     QHash<QString, QString> envs;
-    QHash<int, UnspecifiedPathInfo> unspecfiedPaths;
+    QHash<int, UnspecifiedPathInfo> unspecifiedPaths;
     QList<OutputInfo> specifiedOutputs;
 };
 

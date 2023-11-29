@@ -38,6 +38,11 @@ set(PROJECT_SOURCES
         outputwidget.ui
         ExecutionData.h
         resource.qrc
+
+        tooldialog/imagepacktooldialog.h
+        tooldialog/imagepacktooldialog.cpp
+        tooldialog/imagepacktooldialog.ui
+
         ${WINDOWS_SOURCES}
         ${TS_FILES}
 )
@@ -68,6 +73,8 @@ else()
 
     qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 endif()
+
+target_include_directories(preppipe_gui AFTER PRIVATE ${CMAKE_SOURCE_DIR})
 
 target_link_libraries(preppipe_gui PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
