@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QListWidgetItem>
 #include "ExecutionData.h"
+#include "util/filedropaccepter.h"
 
 namespace Ui {
 class ImagePackToolDialog;
@@ -49,6 +50,7 @@ private:
     static bool STATE_lastExportOptionEnable;
 private:
     Ui::ImagePackToolDialog *ui;
+    FileDropAccepter* forkParamDropHandler = nullptr;
     ExecutionInfo initialInfo;
 };
 

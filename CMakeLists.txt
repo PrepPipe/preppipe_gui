@@ -39,6 +39,11 @@ set(PROJECT_SOURCES
         ExecutionData.h
         resource.qrc
 
+        util/filepathvalidate.h
+        util/filepathvalidate.cpp
+        util/filedropaccepter.h
+        util/filedropaccepter.cpp
+
         tooldialog/imagepacktooldialog.h
         tooldialog/imagepacktooldialog.cpp
         tooldialog/imagepacktooldialog.ui

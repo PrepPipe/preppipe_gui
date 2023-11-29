@@ -7,6 +7,7 @@
 #include <QStyle>
 #include "ExecutionData.h"
 #include "executewindow.h"
+#include "util/filepathvalidate.h"
 
 QString ImagePackToolDialog::STATE_lastImagePath;
 QColor  ImagePackToolDialog::STATE_lastColor(Qt::white);
@@ -100,6 +101,14 @@ ImagePackToolDialog::ImagePackToolDialog(QWidget *parent) :
         STATE_lastExportOptionEnable = checked;
     });
 
+    forkParamDropHandler = new FileDropAccepter(this);
+    forkParamDropHandler->setVerifyCallBack(FilePathValidate::isReadableImageFile);
+    connect(forkParamDropHandler, &FileDropAccepter::fileDropped, this, [this](const QString& path, QObject* droppedTo) {
+        if (droppedTo == ui->forkParamListWidget) {
+            addImageForkParamImpl(path);
+        }
+    });
+    ui->forkParamListWidget->installEventFilter(forkParamDropHandler);
 }
 
 ImagePackToolDialog::~ImagePackToolDialog()
