@@ -96,7 +96,12 @@ void ExecuteWindow::init(const ExecutionInfo& info)
     connect(&proc, &QProcess::finished, this, [this](){
         ExecuteWindow::handleProcOutput();
         ui->plainTextEdit->appendPlainText(SEPARATOR);
-        ui->plainTextEdit->appendPlainText(tr(u8"执行结束(%1)").arg(QString::number(proc.exitCode())));
+        int exitCode = proc.exitCode();
+        if (exitCode == 0) {
+            ui->plainTextEdit->appendPlainText(tr(u8"执行结束(%1)").arg(QString::number(exitCode)));
+        } else {
+            ui->plainTextEdit->appendPlainText(tr(u8"执行出错(%1)，如有疑问请联系开发者").arg(QString::number(exitCode)));
+        }
         ui->killButton->setEnabled(false);
         isCanClose = true;
     });
