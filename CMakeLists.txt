@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(preppipe_gui VERSION 0.1 LANGUAGES CXX)
+project(preppipe_gui VERSION 0.1 LANGUAGES CXX
+        DESCRIPTION "PrepPipe Compiler Graphical User Interface"
+        HOMEPAGE_URL "www.preppipe.org")
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -14,9 +16,22 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
 set(TS_FILES preppipe_gui_zh_HK.ts)
 
+set(GUI_MAJOR_VERSION 0)
+set(GUI_MINOR_VERSION 0)
+set(GUI_PATCH_VERSION 0)
+set(GUI_TWEAK_VERSION 0)
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+  @ONLY)
+
 set(WINDOWS_SOURCES)
 if (WIN32)
-    set(WINDOWS_SOURCES windows.rc)
+    set(WINDOWS_SOURCES
+        windows.rc
+        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+    )
 endif (WIN32)
 
 set(PROJECT_SOURCES
