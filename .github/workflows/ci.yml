@@ -21,9 +21,9 @@ jobs:
           title: "开发中的最新版本 (Latest development build)"
           files: |
             preppipe_gui-windows-x64.7z
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.PREPPIPE_ALL_IN_ONE_PAT }}
-          repository: PrepPipe/preppipe-latest-all-in-one
-          event-type: update-request
+      #- name: Repository Dispatch
+      #  uses: peter-evans/repository-dispatch@v2
+      #  with:
+      #    token: ${{ secrets.PREPPIPE_ALL_IN_ONE_PAT }}
+      #    repository: PrepPipe/preppipe-latest-all-in-one
+      #    event-type: update-request
