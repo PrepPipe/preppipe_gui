@@ -502,6 +502,7 @@ void MainWindow::requestImagePackTool()
     // 然后显示对话框，不用等待完成
     ImagePackToolDialog* dialog = new ImagePackToolDialog(this);
     dialog->setInitialExecutionInfo(initInfo);
+    dialog->setLanguageCode(ui->languageComboBox->currentData().toString());
     dialog->show();
 }
 

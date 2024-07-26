@@ -98,7 +98,7 @@ void ExecuteWindow::init(const ExecutionInfo& info)
         ui->plainTextEdit->appendPlainText(SEPARATOR);
         int exitCode = proc.exitCode();
         if (exitCode == 0) {
-            ui->plainTextEdit->appendPlainText(tr(u8"执行结束(%1)").arg(QString::number(exitCode)));
+            ui->plainTextEdit->appendPlainText(tr(u8"执行完成(%1)").arg(QString::number(exitCode)));
         } else {
             ui->plainTextEdit->appendPlainText(tr(u8"执行出错(%1)，如有疑问请联系开发者").arg(QString::number(exitCode)));
         }
@@ -125,4 +125,6 @@ void ExecuteWindow::handleProcOutput()
         decoded = QString::fromUtf8(content);
     }
     ui->plainTextEdit->appendPlainText(decoded);
+    ui->plainTextEdit->moveCursor(QTextCursor::End);
+    progOutput += decoded;
 }

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>411</height>
+    <height>518</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,9 +36,6 @@
         </property>
         <property name="text">
          <string>构建</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -75,6 +72,43 @@
         </property>
        </widget>
       </item>
+      <item row="2" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QComboBox" name="presetComboBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="presetInfoPushButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>详情</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0">
+       <widget class="QRadioButton" name="loadPresetRadioButton">
+        <property name="text">
+         <string>模板</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -90,9 +124,6 @@
       <string>保存</string>
      </property>
      <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
       <bool>true</bool>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -130,8 +161,11 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="toolTip">
+      <string>勾选此选项后将使用这里的参数对图片进行修改，在下面的两项导出前生效。</string>
+     </property>
      <property name="title">
-      <string>修改</string>
+      <string>修改选区（请确保参数类型、数量符合图片包要求）</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -144,6 +178,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>注：图片选区支持所有类型的参数（图片、文字、颜色），颜色选区只支持颜色参数。如果您使用内嵌的模板，可以通过点击“详情”按钮来查看选区信息。</string>
         </property>
         <property name="dragEnabled">
          <bool>true</bool>
@@ -163,6 +200,9 @@
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QPushButton" name="addForkColorPushButton">
+          <property name="toolTip">
+           <string>将对应选区改成所选的颜色。适用于所有选区类型。</string>
+          </property>
           <property name="text">
            <string>添加颜色参数</string>
           </property>
@@ -170,13 +210,29 @@
         </item>
         <item>
          <widget class="QPushButton" name="addForkImagePushButton">
+          <property name="toolTip">
+           <string>给对应的选区添加一个图片。仅适用于图片选区。</string>
+          </property>
           <property name="text">
            <string>添加图片参数</string>
           </property>
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="addForkTextPushButton">
+          <property name="toolTip">
+           <string>给对应的选区加上一段文字。仅适用于图片选区。</string>
+          </property>
+          <property name="text">
+           <string>添加文本参数</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="addForkNonePushButton">
+          <property name="toolTip">
+           <string>空参数将使对应选区保持不变。适用于所有选区类型，用于在参数列表中占位。</string>
+          </property>
           <property name="text">
            <string>添加空参数</string>
           </property>
@@ -184,6 +240,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="deleteForkParamPushButton">
+          <property name="toolTip">
+           <string>删除目前选定的选区参数</string>
+          </property>
           <property name="text">
            <string>删除</string>
           </property>
@@ -215,6 +274,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="toolTip">
+      <string>勾选此项将导出所有全尺寸的差分组合到指定目录。</string>
+     </property>
      <property name="title">
       <string>导出所有差分</string>
      </property>
@@ -224,6 +286,30 @@
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="FileSelectionWidget" name="exportPathInputWidget" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="exportOverviewGroupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>勾选此项将导出单张概览图到指定位置。</string>
+     </property>
+     <property name="title">
+      <string>导出概览图</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="FileSelectionWidget" name="exportOverviewPathInputWidget" native="true"/>
       </item>
      </layout>
     </widget>

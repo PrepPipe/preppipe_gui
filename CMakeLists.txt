@@ -63,6 +63,10 @@ set(PROJECT_SOURCES
         tooldialog/imagepacktooldialog.cpp
         tooldialog/imagepacktooldialog.ui
 
+        auxiliarydialog/textwithcolorinputdialog.h
+        auxiliarydialog/textwithcolorinputdialog.cpp
+        auxiliarydialog/textwithcolorinputdialog.ui
+
         ${WINDOWS_SOURCES}
         ${TS_FILES}
 )

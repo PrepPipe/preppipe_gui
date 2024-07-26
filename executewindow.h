@@ -21,6 +21,8 @@ public:
 
     void init(const ExecutionInfo& info);
 
+    QString getOutput() {return progOutput;}
+
 protected:
     virtual void closeEvent(QCloseEvent* e) override;
 
@@ -38,6 +40,7 @@ private:
     QVBoxLayout* outputLayout;
     QTemporaryDir tmpdir;
     QProcess proc;
+    QString progOutput;
     bool isCanClose = true;
     bool isUTF8Fallback = false;
 };
