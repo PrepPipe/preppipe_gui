@@ -70,6 +70,9 @@ private:
     static bool STATE_lastForkOptionEnable;
     static bool STATE_lastExportOptionEnable;
     static bool STATE_lastExportOverviewOptionEnable;
+    static QString STATE_presetQueryData;
+    static QString STATE_presetFromExecutablePath;
+    static QString STATE_lastSelectedPresetID;
 private:
     QPixmap getIconForTextForkParam(QString text, QColor color);
     QString getMangledTextForTextForkParam(QString text, QColor color);

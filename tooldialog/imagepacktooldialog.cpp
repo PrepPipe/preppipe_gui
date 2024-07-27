@@ -32,6 +32,10 @@ bool ImagePackToolDialog::STATE_lastForkOptionEnable = true;
 bool ImagePackToolDialog::STATE_lastExportOptionEnable = true;
 bool ImagePackToolDialog::STATE_lastExportOverviewOptionEnable = true;
 
+QString ImagePackToolDialog::STATE_presetQueryData;
+QString ImagePackToolDialog::STATE_presetFromExecutablePath;
+QString ImagePackToolDialog::STATE_lastSelectedPresetID;
+
 ImagePackToolDialog::ImagePackToolDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ImagePackToolDialog)
@@ -151,6 +155,7 @@ ImagePackToolDialog::ImagePackToolDialog(QWidget *parent) :
 
     languageCode = "en";
 
+    // 我们需要等创建本对话框的代码把 initialInfo 初始化后再执行此操作
     QMetaObject::invokeMethod(this, &ImagePackToolDialog::startRetrievePresetInfo, Qt::QueuedConnection);
 }
 
@@ -312,6 +317,11 @@ void ImagePackToolDialog::handleForkParamEdit(QListWidgetItem* item)
 
 void ImagePackToolDialog::startRetrievePresetInfo()
 {
+    if (STATE_presetQueryData.length() > 0 && initialInfo.program == STATE_presetFromExecutablePath) {
+        presetQueryData = STATE_presetQueryData;
+        handlePresetInfo();
+        return;
+    }
     ExecutionInfo info = initialInfo;
     info.envs["PREPPIPE_TOOL"] = "assetmanager";
     info.args.append("--dump-json");
@@ -319,6 +329,8 @@ void ImagePackToolDialog::startRetrievePresetInfo()
     w->init(info);
     connect(w, &ExecuteWindow::executionFinished, this, [=](){
         presetQueryData = w->getOutput();
+        STATE_presetQueryData = presetQueryData;
+        STATE_presetFromExecutablePath = initialInfo.program;
     });
     connect(w, &ExecuteWindow::executionFinished, this, &ImagePackToolDialog::handlePresetInfo);
     connect(w, &ExecuteWindow::executionFinished, w, &QObject::deleteLater);
@@ -401,7 +413,18 @@ void ImagePackToolDialog::handlePresetInfo()
     if (ui->presetComboBox->count() > 0) {
         ui->presetComboBox->setEnabled(true);
         ui->presetInfoPushButton->setEnabled(true);
+        if (STATE_lastSelectedPresetID.length() > 0) {
+            for (int i = 0, n = ui->presetComboBox->count(); i < n; ++i) {
+                if (ui->presetComboBox->itemData(i).toString() == STATE_lastSelectedPresetID) {
+                    ui->presetComboBox->setCurrentIndex(i);
+                }
+            }
+        }
     }
+    // 这个需要在上面的载入完成之后再加上，否则给 QComboBox 加内容的时候就会触发此改动
+    connect(ui->presetComboBox, &QComboBox::currentIndexChanged, this, [this](int index){
+        STATE_lastSelectedPresetID = ui->presetComboBox->itemData(index).toString();
+    });
 }
 
 void ImagePackToolDialog::showPresetInfo()
