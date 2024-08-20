@@ -77,15 +77,20 @@ void ExecuteWindow::init(const ExecutionInfo& info)
     proc.setProgram(info.program);
     proc.setArguments(args);
     if (info.envs.size() > 0 || isUTF8Fallback) {
-        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        QMap<QString, QString> actualEnvs;
         for (auto iter = info.envs.begin(), iterEnd = info.envs.end(); iter != iterEnd; ++iter) {
-            env.insert(iter.key(), iter.value());
+            actualEnvs.insert(iter.key(), iter.value());
         }
         if (isUTF8Fallback) {
             // 如果系统定的默认输出编码不能显示中文或是其他非ASCII字符，让程序输出 UTF-8 而不是报错
-            env.insert("PYTHONIOENCODING", "utf-8");
-            env.insert("PYTHONLEGACYWINDOWSSTDIO", "utf-8");
-            env.insert("PYTHONUTF8", "1");
+            actualEnvs.insert("PYTHONIOENCODING", "utf-8");
+            actualEnvs.insert("PYTHONLEGACYWINDOWSSTDIO", "utf-8");
+            actualEnvs.insert("PYTHONUTF8", "1");
+        }
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        for (auto iter = actualEnvs.begin(), iterEnd = actualEnvs.end(); iter != iterEnd; ++iter) {
+            env.insert(iter.key(), iter.value());
+            ui->plainTextEdit->appendPlainText(iter.key() + "=" + iter.value());
         }
         proc.setProcessEnvironment(env);
     }

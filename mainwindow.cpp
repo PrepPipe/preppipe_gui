@@ -266,9 +266,8 @@ bool MainWindow::populateInitialExecutionInfo(ExecutionInfo& info)
 
     // 设置部分
     if (ui->languageCheckBox->isChecked()) {
-        info.args.append("--language");
         auto data = ui->languageComboBox->currentData();
-        info.args.append(data.toString());
+        info.envs.insert("PREPPIPE_LANGUAGE", data.toString());
     }
 
     return isAllGood;
