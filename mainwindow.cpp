@@ -63,6 +63,15 @@ MainWindow::MainWindow(QWidget *parent)
     ui->renpyTemplateSelectionWidget->setIsOutputInsteadofInput(false);
     ui->renpyTemplateSelectionWidget->setFieldName(tr(u8"RenPy 工程模板目录"));
 
+    ui->webgalOutputDirWidget->setDirectoryMode(true);
+    ui->webgalOutputDirWidget->setIsOutputInsteadofInput(true);
+    ui->webgalOutputDirWidget->setFieldName(tr(u8"WebGal 输出目录"));
+    ui->webgalOutputDirWidget->setDefaultName("game");
+
+    ui->webgalTemplateSelectionWidget->setDirectoryMode(true);
+    ui->webgalTemplateSelectionWidget->setIsOutputInsteadofInput(false);
+    ui->webgalTemplateSelectionWidget->setFieldName(tr(u8"WebGal 工程模板目录"));
+
     ui->pluginSelectionWidget->setDirectoryMode(true);
     ui->pluginSelectionWidget->setFieldName(tr(u8"插件目录"));
 
@@ -100,6 +109,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->renpyOutputDirWidget, &FileSelectionWidget::filePathUpdated, this, &MainWindow::settingsChanged);
     connect(ui->renpyUseTemplateCheckBox, &QCheckBox::stateChanged, this, &MainWindow::settingsChanged);
     connect(ui->renpyTemplateSelectionWidget, &FileSelectionWidget::filePathUpdated, this, &MainWindow::settingsChanged);
+    connect(ui->webgalOutputDirWidget, &FileSelectionWidget::filePathUpdated, this, &MainWindow::settingsChanged);
+    connect(ui->webgalUseTemplateCheckBox, &QCheckBox::stateChanged, this, &MainWindow::settingsChanged);
+    connect(ui->webgalTemplateSelectionWidget, &FileSelectionWidget::filePathUpdated, this, &MainWindow::settingsChanged);
     connect(ui->mainExecutableSelectionWidget, &FileSelectionWidget::filePathUpdated, this, &MainWindow::settingsChanged);
     connect(ui->languageCheckBox, &QCheckBox::stateChanged, this, &MainWindow::settingsChanged);
     connect(ui->languageComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::settingsChanged);
@@ -155,7 +167,7 @@ void MainWindow::search_exe()
     for (const QString& candidate : curdir.entryList(QDir::Files | QDir::Executable, QDir::NoSort)) {
         if (candidate == selfName)
             continue;
-        if (candidate.startsWith("preppipe_cli")) {
+        if (candidate.startsWith("preppipe")) {
             ui->mainExecutableSelectionWidget->setCurrentPath(candidate);
             return;
         }
@@ -396,6 +408,14 @@ void MainWindow::settingsChanged()
         if (ui->renpyUseTemplateCheckBox->isChecked()) {
             args.append("--renpy-export-templatedir");
             populatePath(ui->renpyTemplateSelectionWidget);
+        }
+    } else if (ui->outputSelectionTabWidget->currentWidget() == ui->webgalOutputTab) {
+        args.append("--webgal-codegen");
+        args.append("--webgal-export");
+        populatePath(ui->webgalOutputDirWidget);
+        if (ui->webgalUseTemplateCheckBox->isChecked()) {
+            args.append("--webgal-export-templatedir");
+            populatePath(ui->webgalTemplateSelectionWidget);
         }
     }
 
