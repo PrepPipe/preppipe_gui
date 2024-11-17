@@ -31,6 +31,7 @@ private slots:
     void requestTranslationExport();
     void requestTranslationExportImpl(const QString& path);
     void requestImagePackTool();
+    void requestLaunchNewUI();
 
 private:
     Ui::MainWindow *ui;

@@ -7,6 +7,7 @@
 #include <QProcessEnvironment>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QProcess>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -147,6 +148,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->actionTranslationExport, &QAction::triggered, this, &MainWindow::requestTranslationExport);
     connect(ui->actionImagePackTool, &QAction::triggered, this, &MainWindow::requestImagePackTool);
+    connect(ui->actionNewUI, &QAction::triggered, this, &MainWindow::requestLaunchNewUI);
 
     // 初始化时尝试寻找主程序
     QMetaObject::invokeMethod(this, &MainWindow::search_exe, Qt::QueuedConnection);
@@ -523,5 +525,20 @@ void MainWindow::requestImagePackTool()
     dialog->setInitialExecutionInfo(initInfo);
     dialog->setLanguageCode(ui->languageComboBox->currentData().toString());
     dialog->show();
+}
+
+void MainWindow::requestLaunchNewUI()
+{
+    // 首先，执行该操作需要已经选好主程序
+    ExecutionInfo initInfo;
+    bool programProvided = populateInitialExecutionInfo(initInfo);
+    if (!programProvided) {
+        QMessageBox::critical(this, tr(u8"主程序未选择"), tr(u8"使用工具前需要先选择主程序，请在选好主程序后再尝试该操作。"));
+        return;
+    }
+    if (!QProcess::startDetached(initInfo.program)) {
+        QMessageBox::critical(this, tr(u8"启动失败"), tr(u8"新UI启动失败，请确认主程序选择是否正确。"));
+        return;
+    }
 }
 

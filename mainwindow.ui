@@ -557,6 +557,7 @@
      <string>工具</string>
     </property>
     <addaction name="actionImagePackTool"/>
+    <addaction name="actionNewUI"/>
    </widget>
    <addaction name="operationMenu"/>
    <addaction name="toolMenu"/>
@@ -570,6 +571,11 @@
   <action name="actionImagePackTool">
    <property name="text">
     <string>图片包</string>
+   </property>
+  </action>
+  <action name="actionNewUI">
+   <property name="text">
+    <string>新版UI</string>
    </property>
   </action>
  </widget>
