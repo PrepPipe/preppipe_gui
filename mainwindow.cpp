@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QProcess>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -149,6 +150,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionTranslationExport, &QAction::triggered, this, &MainWindow::requestTranslationExport);
     connect(ui->actionImagePackTool, &QAction::triggered, this, &MainWindow::requestImagePackTool);
     connect(ui->actionNewUI, &QAction::triggered, this, &MainWindow::requestLaunchNewUI);
+    connect(ui->actionDocs, &QAction::triggered, this, &MainWindow::requestOpenDocs);
 
     // 初始化时尝试寻找主程序
     QMetaObject::invokeMethod(this, &MainWindow::search_exe, Qt::QueuedConnection);
@@ -540,5 +542,16 @@ void MainWindow::requestLaunchNewUI()
         QMessageBox::critical(this, tr(u8"启动失败"), tr(u8"新UI启动失败，请确认主程序选择是否正确。"));
         return;
     }
+}
+
+void MainWindow::requestOpenDocs()
+{
+    QDir curdir(QCoreApplication::applicationDirPath());
+    QString docpath = curdir.filePath("docs/index.html");
+    if (!QFile::exists(docpath)) {
+        QMessageBox::critical(this, tr(u8"文档未找到"), tr(u8"文档文件未找到，请检查安装是否完整。"));
+        return;
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(docpath));
 }
 
