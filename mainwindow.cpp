@@ -168,13 +168,26 @@ void MainWindow::search_exe()
     QDir curdir(QCoreApplication::applicationDirPath());
     QString selfName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
 
+    // 如果有 preppipe_cli，优先选择这个
+    // 没有的话再考虑 preppipe
+    QStringList cli_candidates;
+    QStringList hybrid_candidates;
     for (const QString& candidate : curdir.entryList(QDir::Files | QDir::Executable, QDir::NoSort)) {
         if (candidate == selfName)
             continue;
-        if (candidate.startsWith("preppipe")) {
-            ui->mainExecutableSelectionWidget->setCurrentPath(candidate);
-            return;
+        if (candidate.startsWith("preppipe_cli")) {
+            cli_candidates.push_back(candidate);
+        } else if (candidate.startsWith("preppipe")) {
+            hybrid_candidates.push_back(candidate);
         }
+    }
+    if (cli_candidates.size() > 0) {
+        ui->mainExecutableSelectionWidget->setCurrentPath(cli_candidates.first());
+        return;
+    }
+    if (hybrid_candidates.size() > 0) {
+        ui->mainExecutableSelectionWidget->setCurrentPath(hybrid_candidates.first());
+        return;
     }
 }
 
