@@ -558,10 +558,16 @@
     </property>
     <addaction name="actionImagePackTool"/>
     <addaction name="actionNewUI"/>
+   </widget>
+   <widget class="QMenu" name="helpMenu">
+    <property name="title">
+     <string>帮助</string>
+    </property>
     <addaction name="actionDocs"/>
    </widget>
    <addaction name="operationMenu"/>
    <addaction name="toolMenu"/>
+   <addaction name="helpMenu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTranslationExport">
@@ -578,10 +584,13 @@
    <property name="text">
     <string>新版UI</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionDocs">
    <property name="text">
-    <string>文档</string>
+    <string>打开文档</string>
    </property>
   </action>
  </widget>
