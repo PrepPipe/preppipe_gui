@@ -339,7 +339,10 @@ void ImagePackToolDialog::startRetrievePresetInfo()
 void ImagePackToolDialog::handlePresetInfo()
 {
     // qDebug() << "ImagePackToolDialog::handlePresetInfo(): " << presetQueryData;
-    QByteArray jsonDump = presetQueryData.toUtf8();
+    // 有可能会在 JSON 对象之前有报错内容（比如没找到 ffmpeg）
+    int startpos = presetQueryData.indexOf('{');
+    QString actualData = presetQueryData.mid(startpos);
+    QByteArray jsonDump = actualData.toUtf8();
     QJsonDocument d = QJsonDocument::fromJson(jsonDump);
     QJsonObject topobj = d.object();
     int anonymousCount = 0;
