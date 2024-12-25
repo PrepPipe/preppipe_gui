@@ -28,9 +28,10 @@ ExecuteWindow::ExecuteWindow(QWidget *parent) :
         osinfo += " (Windows 11)";
     }
     // 如果当前系统默认的编码无法显示中文或是其他非 ASCII 字符，就使用 UTF-8 而不是默认编码
-    if (osver.type() == QOperatingSystemVersion::Windows && version.majorVersion() == 10 && version.minorVersion() == 0 && version.microVersion() < 22000) {
-        isUTF8Fallback = true;
-    }
+    // ... 鉴于 Windows 总能整些花活，我们这里永远只用 UTF-8
+    // if (osver.type() == QOperatingSystemVersion::Windows && version.majorVersion() == 10 && version.minorVersion() == 0 && version.microVersion() < 22000) {
+    isUTF8Fallback = true;
+    // }
     ui->plainTextEdit->appendPlainText(osinfo);
 }
 
@@ -129,7 +130,15 @@ void ExecuteWindow::handleProcOutput()
     } else {
         decoded = QString::fromUtf8(content);
     }
-    ui->plainTextEdit->appendPlainText(decoded);
+    QTextCursor prevCursor = ui->plainTextEdit->textCursor();
+    bool isAtEnd = prevCursor.atEnd();
     ui->plainTextEdit->moveCursor(QTextCursor::End);
+    ui->plainTextEdit->insertPlainText(decoded);
+    if (isAtEnd) {
+        ui->plainTextEdit->moveCursor(QTextCursor::End);
+    } else {
+        ui->plainTextEdit->setTextCursor(prevCursor);
+    }
+
     progOutput += decoded;
 }
