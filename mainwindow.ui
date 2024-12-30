@@ -565,9 +565,18 @@
     </property>
     <addaction name="actionDocs"/>
    </widget>
+   <widget class="QMenu" name="menuDummyHelp">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>&lt;-- 如果不知道怎么上手的话请点这里 &quot;帮助&quot; -&gt; &quot;打开文档&quot;</string>
+    </property>
+   </widget>
    <addaction name="operationMenu"/>
    <addaction name="toolMenu"/>
    <addaction name="helpMenu"/>
+   <addaction name="menuDummyHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTranslationExport">
